@@ -9,18 +9,19 @@ const { init } = require('./config/socketConfig');
 app.use(express.json())
 
 
-// const corsOptions = {
-//   origin: ['https://bid-drive.com', 'https://www.bid-drive.com','https://www.us.bid-drive.com','https://us.bid-drive.com'], // Add your allowed origins
-//   methods: ['GET', 'POST'], // Specify the allowed methods
-//   credentials: true, // Allow credentials (if needed)
-// };
-
-
 const corsOptions = {
-  origin:['http://localhost:3000','http://localhost:3001','http://localhost:4000'],
+  origin: ['https://nationwide-motors-llc.com', 'https://www.nationwide-motors-llc.com'], // Add your allowed origins
   methods: ['GET', 'POST'], // Specify the allowed methods
-  credentials: true,
+  credentials: true, // Allow credentials (if needed)
 };
+
+
+
+// const corsOptions = {
+//   origin:['http://localhost:3000','http://localhost:3001','http://localhost:4000'],
+//   methods: ['GET', 'POST'], // Specify the allowed methods
+//   credentials: true,
+// };
 
 
 

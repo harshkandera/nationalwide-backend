@@ -341,9 +341,9 @@ exports.BuyNow = async (req, res, next) => {
       throw new ErrorHandler("Buy Now is not enabled for this car", 400);
     }
 
-    if(user?.buyNowCount >= 1){
-      throw new ErrorHandler("You can buy now only once", 400);
-    }
+    // if(user?.buyNowCount >= 1){
+    //   throw new ErrorHandler("You can buy now only once", 400);
+    // }
 
     if (
       car.buyNow.isBuyNow &&
@@ -388,7 +388,6 @@ exports.BuyNow = async (req, res, next) => {
       car.highestBidder = user_id;
       car.bidTime = new Date();
       car.totalBids += 1;
-
       user.buyNowCount += 1;
 
 

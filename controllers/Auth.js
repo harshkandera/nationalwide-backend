@@ -59,7 +59,8 @@ exports.SendOTP = async (req, res) => {
       isProfileCompleted: true,
     });
 
-    await mailsender(email, "verification Email from Bid-drive.com", SendWelcomeEmail(username,email));
+    await mailsender(email, "verification Email from National-Wide-Motors", SendWelcomeEmail(username,email));
+
     // console.log("otp body:",otpbody);
 
     // return res succuessful
@@ -69,6 +70,7 @@ exports.SendOTP = async (req, res) => {
       user,
     });
 
+
   } catch (error) {
     console.log(error);
     return res.status(400).json({
@@ -77,6 +79,8 @@ exports.SendOTP = async (req, res) => {
     });
   }
 };
+
+
 
 // exports.SendOTP = async (req, res) => {
 //   try {

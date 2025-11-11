@@ -23,7 +23,7 @@ const mailsender = async (email, title, body) => {
     });
 
     let info = await transporter.sendMail({
-      from: '"Bid-Drive Support" <support@bid-drive.com>',
+      from: '"National-Wide-Motors-LLC Support" <support@nationwide-motors.com>',
       to: `${email}`,
       subject: `${title}`,
       html: `${body}`,

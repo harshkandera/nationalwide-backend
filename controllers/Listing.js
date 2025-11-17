@@ -1192,22 +1192,156 @@ exports.getInvoices = async (req, res) => {
   }
 };
 
+// exports.deleteBid = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     const { bidId } = req.params;
+//     const { bidAmount } = req.body;
+
+//     const bid = await Bid.findById(bidId).session(session);
+
+//     if (!bid) {
+//       await session.abortTransaction();
+//       return res.status(404).json({ message: "Bid not found" });
+//     }
+
+//     const carId = bid.car_id._id;
+
+
+//     const car = await Car.findById(carId).session(session);
+
+
+//     if (!car) {
+//       await session.abortTransaction();
+//       return res.status(404).json({ message: "Car not found" });
+//     }
+
+//     const isTimeExpired = Date.now() > new Date(car.endTime);
+
+//     if (String(car.highestBidder) === String(bid.user_id)) {
+//       const sortedBids = await getAuctionHistory(carId);
+
+//       if (!sortedBids || sortedBids.length === 0) {
+//         await session.abortTransaction();
+//         return res.status(404).json({ message: "No other bids found" });
+//       }
+
+//       if (sortedBids.length < 2) {
+//         const updatedBid = await Bid.findByIdAndUpdate(
+//           bidId,
+//           { $pull: { bids: { bidAmount } } },
+//           { new: true, session }
+//         );
+
+//         if (!updatedBid) {
+//           await session.abortTransaction();
+//           return res.status(404).json({ message: "Bid not found" });
+//         }
+
+//         if (!isTimeExpired) {
+//           bid.status = "active";
+//           await bid.save({ session });
+//         }
+
+//         car.highestBid = null;
+//         car.highestBidder = null;
+//         car.totalBids = car.totalBids - 1;
+
+//         await car.save({ session });
+
+//         await session.commitTransaction();
+//         return res
+//           .status(200)
+//           .json({ message: "Bid detail removed successfully", updatedBid });
+//       } else {
+//         const secondHighestBid = sortedBids[sortedBids.length - 2];
+
+//         // Update car with new highest bidder and amount
+//         car.highestBid = secondHighestBid.bidAmount;
+//         car.highestBidder = secondHighestBid.user[0].id;
+//         car.totalBids = car.totalBids - 1;
+
+//         // Update second highest bid status to "winner"
+//         const secondBidRecord = await Bid.findOne({
+//           user_id: secondHighestBid.user[0].id,
+//           car_id: carId,
+//         }).session(session);
+
+//         if (!isTimeExpired) {
+//           bid.status = "active";
+//           await bid.save({ session });
+//         }
+
+//         if (secondBidRecord) {
+//           secondBidRecord.status = "winner";
+//           await secondBidRecord.save({ session });
+//         }
+
+//         await car.save({ session });
+//       }
+//     }
+
+//     // Remove the bid from the bids array
+//     const updatedBid = await Bid.findByIdAndUpdate(
+//       bidId,
+//       { $pull: { bids: { bidAmount } } },
+//       { new: true, session }
+//     );
+
+//     if (!updatedBid) {
+//       await session.abortTransaction();
+//       return res.status(404).json({ message: "Bid not found" });
+//     }
+
+//     await session.commitTransaction();
+
+//     return res
+//       .status(200)
+//       .json({ message: "Bid detail removed successfully", updatedBid });
+//   } catch (error) {
+//     await session.abortTransaction();
+//     return res
+//       .status(500)
+//       .json({ message: "Error removing bid detail", error });
+//   } finally {
+//     session.endSession(); // Ensure session is ended
+//   }
+// };
+
+
 exports.deleteBid = async (req, res) => {
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
+    session.startTransaction();
+
     const { bidId } = req.params;
     const { bidAmount } = req.body;
 
-    const bid = await Bid.findById(bidId).session(session);
+    if (!bidId || bidAmount === undefined || bidAmount === null) {
+      await session.abortTransaction();
+      return res
+        .status(400)
+        .json({ message: "bidId and bidAmount are required" });
+    }
 
+    const numericBidAmount = Number(bidAmount);
+    if (!Number.isFinite(numericBidAmount) || numericBidAmount <= 0) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: "Invalid bidAmount" });
+    }
+
+    // 1. Fetch bid
+    const bid = await Bid.findById(bidId).session(session);
     if (!bid) {
       await session.abortTransaction();
       return res.status(404).json({ message: "Bid not found" });
     }
 
-    const carId = bid.car_id._id;
+    // 2. Fetch car
+    const carId = bid.car_id;
     const car = await Car.findById(carId).session(session);
 
     if (!car) {
@@ -1215,97 +1349,90 @@ exports.deleteBid = async (req, res) => {
       return res.status(404).json({ message: "Car not found" });
     }
 
-    const isTimeExpired = Date.now() > new Date(car.endTime);
-
-    if (String(car.highestBidder) === String(bid.user_id)) {
-      const sortedBids = await getAuctionHistory(carId);
-
-      if (!sortedBids || sortedBids.length === 0) {
-        await session.abortTransaction();
-        return res.status(404).json({ message: "No other bids found" });
-      }
-
-      if (sortedBids.length < 2) {
-        const updatedBid = await Bid.findByIdAndUpdate(
-          bidId,
-          { $pull: { bids: { bidAmount } } },
-          { new: true, session }
-        );
-
-        if (!updatedBid) {
-          await session.abortTransaction();
-          return res.status(404).json({ message: "Bid not found" });
-        }
-
-        if (!isTimeExpired) {
-          bid.status = "active";
-          await bid.save({ session });
-        }
-
-        car.highestBid = null;
-        car.highestBidder = null;
-        car.totalBids = car.totalBids - 1;
-
-        await car.save({ session });
-
-        await session.commitTransaction();
-        return res
-          .status(200)
-          .json({ message: "Bid detail removed successfully", updatedBid });
-      } else {
-        const secondHighestBid = sortedBids[sortedBids.length - 2];
-
-        // Update car with new highest bidder and amount
-        car.highestBid = secondHighestBid.bidAmount;
-        car.highestBidder = secondHighestBid.user[0].id;
-        car.totalBids = car.totalBids - 1;
-
-        // Update second highest bid status to "winner"
-        const secondBidRecord = await Bid.findOne({
-          user_id: secondHighestBid.user[0].id,
-          car_id: carId,
-        }).session(session);
-
-        if (!isTimeExpired) {
-          bid.status = "active";
-          await bid.save({ session });
-        }
-
-        if (secondBidRecord) {
-          secondBidRecord.status = "winner";
-          await secondBidRecord.save({ session });
-        }
-
-        await car.save({ session });
-      }
-    }
-
-    // Remove the bid from the bids array
-    const updatedBid = await Bid.findByIdAndUpdate(
-      bidId,
-      { $pull: { bids: { bidAmount } } },
-      { new: true, session }
+    // 3. Remove EXACT bidAmount entry from this bid
+    const index = bid.bids.findIndex(
+      (b) => Number(b.bidAmount) === numericBidAmount
     );
 
-    if (!updatedBid) {
+    if (index === -1) {
       await session.abortTransaction();
-      return res.status(404).json({ message: "Bid not found" });
+      return res
+        .status(404)
+        .json({ message: "Bid amount not found in user's bid history" });
     }
+
+    // Remove that entry
+    bid.bids.splice(index, 1);
+
+    // OPTION B: DO NOT change status even if bids go empty
+    // keep bid.status untouched
+
+    await bid.save({ session });
+
+    // 4. Recompute highestBid, highestBidder, totalBids for this car
+    const allActiveBids = await Bid.find({
+      car_id: carId,
+      status: { $in: ["active", "winner"] },
+    })
+      .session(session)
+      .lean();
+
+    let newHighestBid = null;
+    let newHighestBidder = null;
+    let totalBids = 0;
+
+    for (const b of allActiveBids) {
+      for (const entry of b.bids || []) {
+        const amt = Number(entry.bidAmount);
+        if (!Number.isFinite(amt)) continue;
+
+        totalBids++;
+
+        if (newHighestBid === null || amt > newHighestBid) {
+          newHighestBid = amt;
+          newHighestBidder = b.user_id;
+        }
+      }
+    }
+
+    // Update car fields
+    car.highestBid = newHighestBid;
+    car.highestBidder = newHighestBidder;
+    car.totalBids = totalBids;
+
+    await car.save({ session });
 
     await session.commitTransaction();
 
-    return res
-      .status(200)
-      .json({ message: "Bid detail removed successfully", updatedBid });
+    return res.status(200).json({
+      success: true,
+      message: "Bid amount removed successfully",
+      updatedBid: bid,
+      updatedCar: {
+        id: car._id,
+        highestBid: car.highestBid,
+        highestBidder: car.highestBidder,
+        totalBids: car.totalBids,
+      },
+    });
   } catch (error) {
-    await session.abortTransaction();
+    console.error("DeleteBid Error:", error);
+
+    try {
+      await session.abortTransaction();
+    } catch (_) {}
+
     return res
       .status(500)
-      .json({ message: "Error removing bid detail", error });
+      .json({ message: "Error removing bid amount", error });
   } finally {
-    session.endSession(); // Ensure session is ended
+    session.endSession();
   }
 };
+
+
+
+
 
 exports.EditBiddingDate = async (req, res, next) => {
   try {

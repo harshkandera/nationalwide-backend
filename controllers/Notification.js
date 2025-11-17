@@ -10,6 +10,7 @@ const { sendPushNotification } = require("../utils/fcmNotification");
 
 exports.notifyUsers = async (title , carId , bidAmount, userId, imageUrl ) => {
     try {
+        
       // console.log( "Notifying" , carId ,bidAmount , userId , imageUrl );
       // Define the notification content
       // const title = "New Highest Bid";

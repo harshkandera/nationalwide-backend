@@ -8,6 +8,8 @@ const { updateHighestBid } = require("../services/firebaseService");
 const mongoose = require("mongoose");
 const { notifyUsers } = require("./Notification");
 const cron = require("node-cron");
+const { SendCarWinNotification } = require("../emailTemplates/Winner");
+const mailsender = require("../utils/mailsender");
 
 /**
  * Create / update a bid for a car
@@ -227,11 +229,9 @@ exports.CreateBidding = async (req, res, next) => {
   }
 };
 
-
 /**
  * Cron job to check for ended auctions every 5 minutes
  */
-
 
 cron.schedule("*/5 * * * *", async () => {
   try {
@@ -247,9 +247,6 @@ cron.schedule("*/5 * * * *", async () => {
     console.error("Error during auction check:", err);
   }
 });
-
-
-
 
 /**
  * Function to end auctions in bulk and update bid statuses
@@ -456,6 +453,20 @@ exports.BuyNow = async (req, res, next) => {
       bidAmount,
       user_id,
       car.images?.[0] || ""
+    );
+
+    await mailsender(
+      user.email,
+      "Winner Notification - Nationwide-Motors-LLC",
+      SendCarWinNotification(
+        user.username,
+        user.email,
+        car.name,
+        car._id,
+        bidAmount,
+        user._id,
+        car.images?.[0] || ""
+      )
     );
 
     // End auction immediately using shared session

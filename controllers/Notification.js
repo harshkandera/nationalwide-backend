@@ -8,53 +8,63 @@ const { sendPushNotification } = require("../utils/fcmNotification");
 
 
 
-exports.notifyUsers = async (title , carId , bidAmount, userId, imageUrl ) => {
-    try {
-        
-      // console.log( "Notifying" , carId ,bidAmount , userId , imageUrl );
-      // Define the notification content
-      // const title = "New Highest Bid";
+exports.notifyUsers = async (title, carId, bidAmount, userId, imageUrl) => {
+  try {
+    const message = bidAmount;
 
-      const message = bidAmount;
+    const link = `/browse_auctions/car_details/${carId}`;
 
-      const link = `/browse_auctions/car_details/${carId}`; 
-  
-      // Find all bids for the car except the one from userId
-      const bids = await Bid.find({ car_id: carId });
-  
-      // Get user IDs except the one provided in userId
-      const userIds = bids.map(bid => bid.user_id).filter(id => id.toString() !== userId);
-  
-      // Find all users except the one with userId
-      const users = await User.find({ _id: { $in: userIds } });
-  
-      // Create notifications and save to the database 
-      const notifications = await Promise.all(users.map(async (user) => {
+    const bids = await Bid.find({ car_id: carId });
+
+    const userIds = bids
+      .map(bid => bid.user_id)
+      .filter(id => id.toString() !== userId);
+
+    const users = await User.find({ _id: { $in: userIds } });
+
+    // Create notification in DB for each user
+    await Promise.all(
+      users.map(async (user) => {
         const notification = await Notification.create({
           title,
           body: message,
           link,
           image: imageUrl.fileurl,
         });
-  
-        // Add notification to the user's notifications array
+
         user.notifications.push(notification._id);
         await user.save();
-  
-        return notification;
-      }));
-  
-      // Send push notifications
-      await Promise.all(users.map(user => {
-        return sendPushNotification(user?.fcmToken, title , message , imageUrl.fileurl );
-      }));
-  
-    } catch (err) {
-      console.error("Error notifying users:", err);
-    }
-  };
-  
+      })
+    );
 
+    // ✅ SAFE PUSH NOTIFICATIONS
+    await Promise.all(
+      users.map(async (user) => {
+        if (!user.fcmToken) {
+          console.log(`Skipping user (no FCM token): ${user.email}`);
+          return;
+        }
+
+        try {
+          await sendPushNotification(
+            user.fcmToken,
+            title,
+            message,
+            imageUrl.fileurl
+          );
+        } catch (err) {
+          console.error(
+            `FCM error for user ${user.email}:`,
+            err.message || err
+          );
+        }
+      })
+    );
+
+  } catch (err) {
+    console.error("Error notifying users:", err);
+  }
+};
 
   exports.GetUserNotifications = async (req, res) => {
     const userId = req.params.userId; 

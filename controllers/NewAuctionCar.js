@@ -94,17 +94,17 @@ exports.CreateBidding = async (req, res, next) => {
     }
 
     // Active bids limit per user
-    const activeBidsForUser = await Bid.find({
-      user_id,
-      status: "active",
-    }).session(session);
+    // const activeBidsForUser = await Bid.find({
+    //   user_id,
+    //   status: "active",
+    // }).session(session);
 
-    if (activeBidsForUser.length >= 2) {
-      throw new ErrorHandler(
-        "New clients are allowed to participate in maximum 2 auctions simultaneous.",
-        400
-      );
-    }
+    // if (activeBidsForUser.length >= 2) {
+    //   throw new ErrorHandler(
+    //     "New clients are allowed to participate in maximum 2 auctions simultaneous.",
+    //     400
+    //   );
+    // }
 
     // Minimum required bid calculation
     const baseAmount =
@@ -227,9 +227,12 @@ exports.CreateBidding = async (req, res, next) => {
   }
 };
 
+
 /**
  * Cron job to check for ended auctions every 5 minutes
  */
+
+
 cron.schedule("*/5 * * * *", async () => {
   try {
     const auctions = await Car.find({
@@ -244,6 +247,9 @@ cron.schedule("*/5 * * * *", async () => {
     console.error("Error during auction check:", err);
   }
 });
+
+
+
 
 /**
  * Function to end auctions in bulk and update bid statuses

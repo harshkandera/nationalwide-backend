@@ -531,6 +531,9 @@ exports.updateReview = async (req, res) => {
       videoUrl,
       media
     } = req.body;
+
+    console.log(req.body)
+    
     const supportedTypes = ["jpg", "jpeg", "png"];
 
 

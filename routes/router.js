@@ -35,8 +35,6 @@ router.get('/get_user_dashboard/:userId', auth ,isUser,getDashboardData)
 
 router.post("/metadata",createMetadata);
 
-
-
 router.get("/metadata",getMetadata);
 
 

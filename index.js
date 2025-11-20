@@ -15,7 +15,7 @@ const corsOptions = {
   credentials: true, // Allow credentials (if needed)
 };
 
-// adding commit for change
+// adding commit for cha
 
 // const corsOptions = {
 //   origin:['http://localhost:3000','http://localhost:3001','http://localhost:4000'],

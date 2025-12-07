@@ -875,6 +875,8 @@ exports.createMetadata = async (req, res) => {
       existingMakeAndModels,
     } = req.body;
 
+    
+
     if (
       existingMakeAndModels.Make?.trim() &&
       Array.isArray(existingMakeAndModels.Models) &&
@@ -1507,6 +1509,10 @@ exports.FilterListingsForUsa = async (req, res, next) => {
 
     const match = {};
 
+    
+
+
+
     // console.log(req.body);
 
     // Keyword filtering
@@ -1717,6 +1723,7 @@ exports.GetAuctionsByStatusForUsa = async (req, res, next) => {
   try {
     const { status = "live", category = "cars" } = req.params;
     const { page = 1, limit = 30 } = req.query;
+
 
     // console.log(status, category , page, limit);
 

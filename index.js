@@ -1,102 +1,135 @@
 const express = require("express");
-require("dotenv").config()
-const cors = require("cors")
-const app = express()
-const http = require("http"); 
-const { init } = require('./config/socketConfig');
+require("dotenv").config();
+const cors = require("cors");
+const http = require("http");
+const rateLimit = require("express-rate-limit");
+const cookieParser = require("cookie-parser");
+const fileUpload = require("express-fileupload");
+const path = require("path");
+const helmet = require("helmet");
+const xss = require("xss-clean");
+const mongoSanitize = require("express-mongo-sanitize");
 
+const { init } = require("./config/socketConfig");
+const dbconnection = require("./config/database");
+const cloudinary = require("./utils/cloudinary");
+const router = require("./routes/router");
+const mainrouter = require("./routes/mainrouter");
 
-app.use(express.json())
+const app = express();
+const PORT = process.env.PORT || 3000;
 
+// ----------------------------------------
+// Middleware
+// ----------------------------------------
 
+// JSON parser
+app.use(express.json());
+
+// CORS
 const corsOptions = {
-  origin: ['https://nationwide-motors-llc.com', 'https://www.nationwide-motors-llc.com'], // Add your allowed origins
-  methods: ['GET', 'POST'], // Specify the allowed methods
-  credentials: true, // Allow credentials (if needed)
+  origin: [
+    "https://nationwide-motors-llc.com",
+    "https://www.nationwide-motors-llc.com",
+  ],
+  methods: ["GET", "POST"],
+  credentials: true,
 };
 
-// adding commit for cha
-
 // const corsOptions = {
-//   origin:['http://localhost:3000','http://localhost:3001','http://localhost:4000'],
-//   methods: ['GET', 'POST'], // Specify the allowed methods
+//   origin: [
+// 'http://localhost:3000','http://localhost:3001','http://localhost:4000'
+//   ],
+//   methods: ["GET", "POST"],
 //   credentials: true,
 // };
 
 
 
-
 app.use(cors(corsOptions));
 
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: {
+    success: false,
+    message: "Too many requests, please slow down.",
+  },
+  skip: (req) => req.method === "OPTIONS",
+});
 
-const dbconnection = require("./config/database")
-const router = require("./routes/router")
-const PORT= process.env.PORT || 3000;
-const cookieParser = require('cookie-parser');
-const fileUpload = require('express-fileupload');
-const mainrouter = require('./routes/mainrouter')
+// Security middleware
+app.use(helmet());
+app.use(xss());
+app.use(mongoSanitize());
 
+// Apply limiter to API
+app.use("/api", apiLimiter);
+app.use("/api/v2", apiLimiter);
+
+// Cookie parser
 app.use(cookieParser());
-app.use(fileUpload({
-  useTempFiles: true,
-  tempFileDir:"/tmp/"
-}));
 
+// File upload
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  })
+);
 
+// ----------------------------------------
+// Database + Cloudinary
+// ----------------------------------------
 dbconnection();
-
-const cloudinary = require('./utils/cloudinary');
 cloudinary.cloudinaryConnect();
 
+// ----------------------------------------
+// Routes
+// ----------------------------------------
+app.use("/api", router);
+app.use("/api/v2", mainrouter);
 
-app.use("/api",router);
-app.use("/api/v2",mainrouter);
-
-app.all('*',(req,res,next)=>{
-  const err = new Error(`Cant fint ${req.originalUrl} on the server `)
-  err.statusCode = 404
-  err.message = 'Not Found'
-  next(err)
-})
-
-const errorHandler = (err, req, res, next) => {
-
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-
-  res.status(statusCode).json({
-    success: false,
-    status: statusCode,
-    message,
-  });
-
-};
-
-// Use the global error handler
-app.use(errorHandler);
-
-
-app.get('/',()=>{
-
-  app.use(express.static(path.resolve(__dirname,'my-app','build')))
-  res.sendFile(path.resolve(__dirname,'my-app','build','index.html'))
-
-})
-
-
+// Test route
 app.get("/", (req, res) => {
   res.send("API is working");
 });
 
+// ----------------------------------------
+// 404 Handler
+// ----------------------------------------
+app.all("*", (req, res, next) => {
+  const err = new Error(`Cannot find ${req.originalUrl} on this server`);
+  err.statusCode = 404;
+  next(err);
+});
 
-// Create HTTP server and initialize Socket.io
+// ----------------------------------------
+// Global Error Handler
+// ----------------------------------------
+app.use((err, req, res, next) => {
+  console.error("ERROR:", err);
+
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  return res.status(statusCode).json({
+    success: false,
+    status: statusCode,
+    message,
+  });
+});
+
+// ----------------------------------------
+// HTTP Server + Socket.io
+// ----------------------------------------
 const server = http.createServer(app);
-
-
 init(server);
 
-
-server.listen(PORT,()=>{
-    console.log("app is listening on port no. ",PORT)
-})
-
+// ----------------------------------------
+// Start Server
+// ----------------------------------------
+server.listen(PORT, () => {
+  console.log("App is listening on port:", PORT);
+});

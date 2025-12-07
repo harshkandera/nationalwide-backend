@@ -19,9 +19,6 @@ const mainrouter = require("./routes/mainrouter");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ----------------------------------------
-// Middleware
-// ----------------------------------------
 
 // JSON parser
 app.use(express.json());
@@ -133,3 +130,4 @@ init(server);
 server.listen(PORT, () => {
   console.log("App is listening on port:", PORT);
 });
+f

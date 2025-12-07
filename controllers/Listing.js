@@ -1102,6 +1102,7 @@ exports.deleteCarsByIds = async (req, res, next) => {
   }
 };
 
+
 async function uploadPdf(file, folder) {
   const options = {
     folder: folder,
@@ -1112,6 +1113,7 @@ async function uploadPdf(file, folder) {
   };
   return await cloudinary.uploader.upload(file.tempFilePath, options);
 }
+
 
 exports.UploadInvoice = async (req, res, next) => {
   try {

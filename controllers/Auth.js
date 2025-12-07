@@ -248,7 +248,23 @@ exports.login = async (req, res, next) => {
   try {
     // fetch data from body
     const { email: lowerCaseEmail, password } = req.body;
-    console.log(req.body);
+
+    if (
+      !lowerCaseEmail ||
+      !password ||
+      typeof lowerCaseEmail !== "string" ||
+      typeof password !== "string"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "all fields are required",
+      });
+    }
+
+
+    
+    // console.log(req.body);
+
 
     const email = lowerCaseEmail.toLowerCase();
 

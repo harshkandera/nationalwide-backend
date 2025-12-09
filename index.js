@@ -19,7 +19,6 @@ const mainrouter = require("./routes/mainrouter");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
 // JSON parser
 app.use(express.json());
 
@@ -35,13 +34,13 @@ const corsOptions = {
 
 // const corsOptions = {
 //   origin: [
-// 'http://localhost:3000','http://localhost:3001','http://localhost:4000'
+//     "http://localhost:3000",
+//     "http://localhost:3001",
+//     "http://localhost:4000",
 //   ],
 //   methods: ["GET", "POST"],
 //   credentials: true,
 // };
-
-
 
 app.use(cors(corsOptions));
 
@@ -130,4 +129,3 @@ init(server);
 server.listen(PORT, () => {
   console.log("App is listening on port:", PORT);
 });
-f

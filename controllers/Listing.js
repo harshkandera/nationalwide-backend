@@ -310,7 +310,6 @@ exports.GetDraftListing = async (req, res, next) => {
 
 exports.GetListingById = async (req, res, next) => {
   try {
-
     if (!req.params.id) {
       return next(new ErrorHandler("Car listing not found", 404));
     }
@@ -326,7 +325,6 @@ exports.GetListingById = async (req, res, next) => {
       Listing,
       SortedBids,
     });
-    
   } catch (error) {
     next(error);
   }
@@ -544,11 +542,12 @@ exports.FilterListings = async (req, res, next) => {
       {
         $match: {
           ...match,
-          status: { $nin: ["draft", "past"] },
+          status: { $ne: "draft" }, // allow past listings
           "category.type": category,
           isForUsa: { $in: [false, null] },
         },
       },
+
       {
         $project: {
           name: 1,
@@ -617,9 +616,7 @@ exports.GetAuctionsByStatus = async (req, res, next) => {
     if (status === "live") {
       query = {
         ...query,
-        status: "live",
-        startTime: { $lte: now },
-        endTime: { $gte: now },
+        status: { $in: ["live", "past"] },
       };
     } else if (status === "past") {
       query = {
@@ -783,7 +780,7 @@ exports.GetAuctionsByStatus = async (req, res, next) => {
     }
 
     const totalCars = await Car.countDocuments({
-      status: { $nin: ["draft", "past"] },
+      status: { $nin: ["draft"] },
       isForUsa: { $in: [false, null] },
     });
 
@@ -874,8 +871,6 @@ exports.createMetadata = async (req, res) => {
       existingConstructionMakeAndModels,
       existingMakeAndModels,
     } = req.body;
-
-    
 
     if (
       existingMakeAndModels.Make?.trim() &&
@@ -1104,7 +1099,6 @@ exports.deleteCarsByIds = async (req, res, next) => {
   }
 };
 
-
 async function uploadPdf(file, folder) {
   const options = {
     folder: folder,
@@ -1115,7 +1109,6 @@ async function uploadPdf(file, folder) {
   };
   return await cloudinary.uploader.upload(file.tempFilePath, options);
 }
-
 
 exports.UploadInvoice = async (req, res, next) => {
   try {
@@ -1213,9 +1206,7 @@ exports.getInvoices = async (req, res) => {
 
 //     const carId = bid.car_id._id;
 
-
 //     const car = await Car.findById(carId).session(session);
-
 
 //     if (!car) {
 //       await session.abortTransaction();
@@ -1313,7 +1304,6 @@ exports.getInvoices = async (req, res) => {
 //     session.endSession(); // Ensure session is ended
 //   }
 // };
-
 
 exports.deleteBid = async (req, res) => {
   const session = await mongoose.startSession();
@@ -1434,10 +1424,6 @@ exports.deleteBid = async (req, res) => {
   }
 };
 
-
-
-
-
 exports.EditBiddingDate = async (req, res, next) => {
   try {
     const { carIds, data } = req.body;
@@ -1508,10 +1494,6 @@ exports.FilterListingsForUsa = async (req, res, next) => {
     } = req.body;
 
     const match = {};
-
-    
-
-
 
     // console.log(req.body);
 
@@ -1665,7 +1647,7 @@ exports.FilterListingsForUsa = async (req, res, next) => {
       {
         $match: {
           ...match,
-          status: { $nin: ["draft", "past"] },
+          status: { $nin: ["draft"] },
           "category.type": category,
           isForUsa: true,
         },
@@ -1702,7 +1684,7 @@ exports.FilterListingsForUsa = async (req, res, next) => {
       cars[0].totalCount.length > 0 ? cars[0].totalCount[0].count : 0;
 
     const total = await Car.countDocuments({
-      status: { $nin: ["draft", "past"] },
+      status: { $nin: ["draft"] },
       isForUsa: true,
     });
 
@@ -1723,7 +1705,6 @@ exports.GetAuctionsByStatusForUsa = async (req, res, next) => {
   try {
     const { status = "live", category = "cars" } = req.params;
     const { page = 1, limit = 30 } = req.query;
-
 
     // console.log(status, category , page, limit);
 
